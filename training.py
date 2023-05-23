@@ -32,13 +32,14 @@ class NeuralProcessTrainer():
         Frequency with which to print loss information during training.
     """
     def __init__(self, device, neural_process, optimizer, num_context_range,
-                 num_extra_target_range, print_freq=100):
+                 num_extra_target_range, print_freq=100, verbose=True):
         self.device = device
         self.neural_process = neural_process
         self.optimizer = optimizer
         self.num_context_range = num_context_range
         self.num_extra_target_range = num_extra_target_range
         self.print_freq = print_freq
+        self.verbose = verbose
 
         # Check if neural process is for images
         self.is_img = isinstance(self.neural_process, NeuralProcessImg)
@@ -98,10 +99,10 @@ class NeuralProcessTrainer():
 
                 self.steps += 1
 
-                if self.steps % self.print_freq == 0:
+                if all([self.verbose, self.steps % self.print_freq == 0]):
                     print("iteration {}, loss {:.3f}".format(self.steps, loss.item()))
-
-            print("Epoch: {}, Avg_loss: {}".format(epoch, epoch_loss / len(data_loader)))
+            if self.verbose:
+                print("Epoch: {}, Avg_loss: {}".format(epoch, epoch_loss / len(data_loader)))
             self.epoch_loss_history.append(epoch_loss / len(data_loader))
 
     def _loss(self, p_y_pred, y_target, q_target, q_context):

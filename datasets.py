@@ -5,6 +5,80 @@ from math import pi
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
+RNG = np.random.default_rng()
+import pdb
+
+class MultiPeakGaussians(Dataset):
+    def __init__(self, num_samples=1000, num_points=100, warping=False):
+        self.N = num_samples
+        self.num_points = num_points
+        self.warping = warping
+        x = torch.linspace(0,1,num_points).unsqueeze(1)
+        self.data = []
+        for i in range(self.N):
+            t = np.linspace(0,1, self.num_points)
+            if self.warping:
+                t = self.gam(t)
+            y = self.g(t).astype(np.float32)
+            self.data.append((x, torch.from_numpy(y).unsqueeze(1))) 
+
+    def g(self, t):
+        out = np.ones(t.shape)
+        p = RNG.choice([1,2,3])
+        for i in range(1,p+1):
+            zi = np.random.normal(1, 0.1)
+            mean = (2*i-1)/(2*p)
+            std = 1/(3*p)
+            out += zi*self.phi(t, mean, std)
+
+        return out
+
+    def gamma(self, t):
+        a = np.random.uniform(-3, 3)
+        if a==0:
+            gam = t
+        else:
+            gam = (np.exp(a*t)-1)/(np.exp(a)-1)
+
+        return gam  
+
+    def phi(self, t, mu, sigma):
+        factor = 1/(2*(sigma**2))
+        return np.exp(-factor*(t-mu)**2)
+
+    def __getitem__(self, i):
+        return self.data[i]
+    
+    def __len__(self):
+        return self.N
+
+class GaussiansData(Dataset):
+    def __init__(self, num_samples=1000, num_points=100):
+        self.N = num_samples
+        self.t = torch.linspace(0,1,num_points).unsqueeze(1)
+        # Generate synthetic dataset with randomly 
+        # shifted noisy 1D signal
+        torch.manual_seed(1)  # for reproducibility
+        x = torch.linspace(-12, 12, num_points).expand(self.N, num_points)
+        noise = torch.randint(1, 100, (self.N, 1)) / 1e5
+        mu = torch.randint(-30, 30, size=(self.N, 1)) / 10
+        sig = torch.randint(50, 500, size=(self.N, 1)) / 1e2
+        train_data = self.gaussian(x, mu, sig) + noise * torch.randn(size=(self.N, num_points))
+        # Normalize to (0, 1)
+        train_data = (train_data - train_data.min()) / (train_data.max() - train_data.min()) 
+        self.data = []
+        for i in range(self.N):
+            self.data.append((self.t, train_data[i].unsqueeze(1))) 
+        
+    
+    def gaussian(self, x, mu, sig):
+        return torch.exp(-torch.pow(x - mu, 2.) / (2 * torch.pow(sig, 2.)))
+  
+    def __getitem__(self, i):
+        return self.data[i]
+    
+    def __len__(self):
+        return self.N
 
 
 class SineData(Dataset):
@@ -50,6 +124,7 @@ class SineData(Dataset):
             x = torch.linspace(-pi, pi, num_points).unsqueeze(1)
             # Shape (num_points, y_dim)
             y = a * torch.sin(x - b)
+            pdb.set_trace()
             self.data.append((x, y))
 
     def __getitem__(self, index):

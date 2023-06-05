@@ -1,8 +1,41 @@
 import numpy as np 
+import torch
+from torch.utils.data import Dataset
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Define an Active learning dataset
+class ActiveLearningDataset(Dataset):
+    def __init__(self, x, y):
+        self.x, self.y = self.to_tensor(x,y)
+
+    def __len__(self):
+        return len(self.x)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        xs = self.x[idx]
+        ys = self.y[idx]
+
+        return xs, ys 
+
+    def to_tensor(self, x, y):
+        x_ = torch.tensor(x, dtype=torch.float32).to(device)
+        y_ = torch.tensor(y, dtype=torch.float32).to(device)
+
+        return x_, y_
+    
+    def update(self, x, y):
+        x, y = self.to_tensor(x, y)
+        self.x = torch.vstack((self.x, x))
+        self.y = torch.vstack((self.y, y))
+
+        return
 
 # create synthetic data
 class PhasemapSimulator:
-    def __init__(self, n_grid=50, n_domain=100):
+    def __init__(self, n_grid=50, n_domain=100, use_random_warping=False):
         """ Simulate a phasemap with domain warping of functions
         """
         self.n_domain = n_domain
@@ -13,6 +46,7 @@ class PhasemapSimulator:
         self.points = np.vstack([X.ravel(), Y.ravel()]).T
         self.phase1 = lambda x : 0.5*(x)**2+0.45
         self.phase2 = lambda x : -0.45*(x)**2+0.55
+        self.use_random_warping = use_random_warping
         
     def g(self, t, p):
         out = np.ones(self.t.shape)
@@ -29,6 +63,10 @@ class PhasemapSimulator:
         return np.exp(-factor*(t-mu)**2)
     
     def gamma(self):
+        if not self.use_random_warping:
+            
+            return self.t
+
         a = np.random.uniform(-3, 3)
         if a==0:
             gam = self.t

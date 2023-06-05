@@ -12,8 +12,10 @@ from matplotlib.colors import Normalize
 
 import torch
 from torch.utils.data import DataLoader, Dataset
-import torch
 from torch import nn, optim
+from torch.distributions import Normal
+from torch.nn import functional as F
+
 sys.path.append('./helpers.py')
 from helpers import PhasemapSimulator
 
@@ -34,7 +36,7 @@ RNG = np.random.default_rng()
 N_LATENT = 3
 N_COMPOSITION = 2
 n_initial = 25
-n_queries = 100
+n_queries = 400
 
 # Define the simulator
 sim = PhasemapSimulator()
@@ -94,9 +96,9 @@ class ActiveLearningModel(nn.Module):
 
         return mu
 
-def loss_function(c, mu, model):
+def loss_function(c, z_target, model):
     mu_hat = model(c)
-    loss = nn.functional.mse_loss(mu, mu_hat, reduction='sum')
+    loss = F.mse_loss(z_target, mu_hat, reduction="mean")
 
     return loss
 
@@ -109,9 +111,10 @@ def train(model, train_loader):
         xi = torch.from_numpy(time.astype(np.float32))
         xi = xi.repeat(ci.shape[0], 1).to(device)
         with torch.no_grad():
-            mu, _ = np_model.xy_to_mu_sigma(xi.unsqueeze(2), yi.unsqueeze(2))
+            z_target, _ = np_model.xy_to_mu_sigma(xi.unsqueeze(2), 
+            yi.unsqueeze(2))
         optimizer.zero_grad()
-        loss = loss_function(ci, mu, model)
+        loss = loss_function(ci, z_target, model)
         loss.backward()
         train_loss += loss.item()
         optimizer.step()
@@ -134,29 +137,33 @@ class NPModelDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-def fit(np_model, model, data):
+def update_npmodel(np_model, data):
     batch_size = 2
     num_context = 75
     num_target = 25
     dataset = NPModelDataset(data.y)
-    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    optimizer = torch.optim.Adam(np_model.parameters(), lr=3e-4)
-    np_trainer = NeuralProcessTrainer(device, np_model, optimizer,
-                                    num_context_range=(num_context, num_context),
-                                    num_extra_target_range=(num_target, num_target), 
-                                    print_freq=1000,
-                                    verbose = False
-                                    )
+    data_loader = DataLoader(dataset, 
+    batch_size=batch_size, shuffle=True)
+    np_optimizer = torch.optim.Adam(np_model.parameters(), lr=3e-4)
+    np_trainer = NeuralProcessTrainer(device, 
+    np_model, np_optimizer,
+    num_context_range=(num_context, num_context),
+    num_extra_target_range=(num_target, num_target),
+    verbose = False
+    )
 
     np_model.training = True
     np_trainer.train(data_loader, 30)
 
+    return
+
+def fit(model, data):
     loader = torch.utils.data.DataLoader(data,
     batch_size=BATCH_SIZE,shuffle=True,num_workers=0)
     for e in range(NUM_EPOCHS):
         loss = train(model, loader)
 
-    print('p(z|c) loss value : %.4f'%loss)
+    print('p(z|c) loss value : %.4f'%(loss))
 
     return
 
@@ -210,7 +217,6 @@ def query_strategy(model, C_query, n_instances=1):
 
     return query_idx
 
-# the active learning loop
 cmap = get_cmap['Reds']
 norm = Normalize(vmin=0, vmax=n_queries)
 
@@ -240,6 +246,7 @@ def plot_iteration(query_idx, model, np_model):
 
     return 
 
+## Perform active learning campaign
 for i in range(n_queries):
     # query_idx = query_strategy(model, C_pool, n_instances=1)
     # Check with random selection
@@ -249,15 +256,19 @@ for i in range(n_queries):
                             )
     data.update(C_pool[query_idx], y_pool[query_idx])
     colomap_indx.append(i+1)
+    fit(model, data)
 
-    if np.remainder(100*i/n_queries,10)==0:
-        fit(np_model, model, data)
+    if np.remainder(100*(i+1)/n_queries,10)==0:
+        update_npmodel(np_model, data)
         plot_iteration(query_idx, model, np_model) 
         plt.savefig(SAVE_DIR+'itr_%d.png'%i)
 
     # remove queried instance from pool
     C_pool = np.delete(C_pool, query_idx, axis=0)
     y_pool = np.delete(y_pool, query_idx, axis=0)
+
+# freeze model training
+np_model.training = False
 
 # %%
 with torch.no_grad():
@@ -290,4 +301,56 @@ with torch.no_grad():
         axs[i].fill_between(time,mu_i-sigma_i, 
         mu_i+sigma_i,alpha=0.2, color='grey')
     plt.savefig(SAVE_DIR+'final_compare.png')
+    plt.close()
+
+# plot samples in the composition grid of p(y|c)
+c1 = torch.linspace(0,1,10)
+c2 = torch.linspace(0,1,10)
+fig, axs = plt.subplots(10,10, figsize=(2*10, 2*10))
+axs = axs.T
+with torch.no_grad():
+    for i in range(10):
+        for j in range(10):
+            ci = np.array([c1[i], c2[j]])
+            mu, sigma = predict(model, ci.reshape(1, N_COMPOSITION))
+            mu_ = mu.cpu().squeeze().numpy()
+            sigma_ = sigma.cpu().squeeze().numpy()
+            axs[i,9-j].plot(time, mu_)
+            axs[i,9-j].fill_between(time,mu_-sigma_, mu_+sigma_,
+            alpha=0.2, color='grey')
+            axs[i,9-j].set_xlim(0, 1)
+            axs[i,9-j].set_title('(%.2f, %.2f)'%(c1[i], c2[j]))
+    fig.supxlabel('C1', fontsize=20)
+    fig.supylabel('C2', fontsize=20) 
+
+    plt.savefig(SAVE_DIR+'samples_in_compgrid.png')
+    plt.close()
+
+# plot samples in the latent grid of p(y|z)
+x_target = torch.Tensor(np.linspace(0, 1, 100))
+x_target = x_target.unsqueeze(1).unsqueeze(0)
+
+z1 = torch.linspace(-3,3,10)
+z2 = torch.linspace(-3,3,10)
+fig, axs = plt.subplots(10,10, figsize=(2*10, 2*10))
+axs = axs.T
+with torch.no_grad():
+    for i in range(10):
+        for j in range(10):
+            z_sample = torch.zeros((1, z_dim))
+            z_sample[0,0] = z1[i]
+            z_sample[0,1] = z2[j]
+            mu, sigma = np_model.xz_to_y(x_target.to(device), 
+            z_sample.to(device))
+            mu_ = mu.cpu().squeeze().numpy() 
+            sigma_ = sigma.cpu().squeeze().numpy()
+            axs[i,9-j].plot(x_target.squeeze().numpy(), mu_)
+            axs[i,9-j].fill_between(x_target.squeeze().numpy(), 
+            mu_-sigma_, mu_+sigma_,alpha=0.2, color='grey')
+            axs[i,9-j].set_xlim(0, 1)
+            axs[i,9-j].set_title('(%.2f, %.2f)'%(z1[i], z2[j]))
+    fig.supxlabel('z1', fontsize=20)
+    fig.supylabel('z2', fontsize=20)
+
+    plt.savefig(SAVE_DIR+'samples_in_latentgrid.png')
     plt.close()

@@ -1,37 +1,6 @@
 import numpy as np 
 import torch
-from torch.utils.data import Dataset
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Define an Active learning dataset
-class ActiveLearningDataset(Dataset):
-    def __init__(self, x, y):
-        self.x, self.y = self.to_tensor(x,y)
-
-    def __len__(self):
-        return len(self.x)
-
-    def __getitem__(self, idx):
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        xs = self.x[idx]
-        ys = self.y[idx]
-
-        return xs, ys 
-
-    def to_tensor(self, x, y):
-        x_ = torch.tensor(x, dtype=torch.float32).to(device)
-        y_ = torch.tensor(y, dtype=torch.float32).to(device)
-
-        return x_, y_
-    
-    def update(self, x, y):
-        x, y = self.to_tensor(x, y)
-        self.x = torch.vstack((self.x, x))
-        self.y = torch.vstack((self.y, y))
-
-        return
+import matplotlib.pyplot as plt
 
 # create synthetic data
 class PhasemapSimulator:
@@ -96,5 +65,20 @@ class PhasemapSimulator:
         self.F = [self.simulate(ci) for ci in self.points]
 
         return
+
+    def plot(self, fname):
+        fig, axs = plt.subplots(10,10, figsize=(2*10, 2*10))
+        axs = axs.T
+        c = np.linspace(0, 1, 10)
+        for i in range(10):
+            for j in range(10):
+                cij = np.array([c[i], c[j]])
+                axs[i,9-j].plot(self.t, self.simulate(cij))
+                axs[i,9-j].set_xlim(0, 1)
+                axs[i, 9-j].axis('off')
+        fig.supxlabel('C1', fontsize=20)
+        fig.supylabel('C2', fontsize=20) 
+        plt.savefig(fname)
+        plt.close()
 
 

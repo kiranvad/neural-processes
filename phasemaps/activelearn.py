@@ -12,7 +12,7 @@ from gpytorch.likelihoods import MultitaskGaussianLikelihood
 from gpytorch.mlls import SumMarginalLogLikelihood
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-sys.path.append('/mmfs1/home/kiranvad/kiranvad/hyak/SAXSpy/neural-processes/')
+sys.path.append('/mmfs1/home/kiranvad/kiranvad/neural-processes')
 from neural_process import NeuralProcess
 from training import NeuralProcessTrainer
 from utils import context_target_split

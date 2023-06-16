@@ -7,6 +7,7 @@ import sys, pdb
 sys.path.append('./activelearn')
 from activelearn import utility, from_comp_to_spectrum
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from scipy import stats
 
 # plot samples in the composition grid of p(y|c)
 def _inset_spectra(c, time, mu, sigma, ax, **kwargs):
@@ -114,7 +115,7 @@ def plot_npmodel(time, z_dim, model, fname):
 
 def plot_gpmodel(time, gp_model, np_model, C_train, y_train, fname):
     # plot comp to z model predictions and the GP covariance
-    fig, axs = plt.subplots(4,4, figsize=(4*4, 4*4))
+    fig, axs = plt.subplots(4,3, figsize=(4*3, 4*4))
     fig.subplots_adjust(wspace=0.5, hspace=0.5)
     n_train = len(C_train)
     with torch.no_grad():
@@ -130,33 +131,28 @@ def plot_gpmodel(time, gp_model, np_model, C_train, y_train, fname):
 
         # compare z values from GP and NP models
         for i in range(3):
-            axs[0,i].scatter(z_true_mu[:,i], z_pred[:,i], color='k')
-            sortidx = np.argsort(z_true_mu[:,i])
-            axs[0,i].plot(z_true_mu[sortidx,i], z_true_mu[sortidx,i], color='k', ls='--')
-            axs[0,i].fill_between(z_true_mu[sortidx,i], 
-            z_true_mu[sortidx,i]+z_true_sigma[sortidx,i], 
-            z_true_mu[sortidx,i]-z_true_sigma[sortidx,i],            
-            color='k', alpha=0.2)            
-            axs[0,i].set_title('z_%d'%(i+1))
-            axs[0,i].set_xlim([z_true_mu[:,i].min(), z_true_mu[:,i].max()])
-            axs[0,i].set_ylim([z_true_mu[:,i].min(), z_true_mu[:,i].max()]) 
-            axs[0,i].set_xlabel('NP Model')
-            axs[0,i].set_ylabel('GP Model') 
+            sortind = np.argsort(z_true_mu[:,i])
+            density = stats.kde.gaussian_kde(z_true_mu[sortind,i])
+            axs[0,i].plot(z_true_mu[sortind,i], density(z_true_mu[sortind,i]), label='NP Model')
+            sortind = np.argsort(z_pred[:,i])
+            density = stats.kde.gaussian_kde(z_pred[sortind,i])
+            axs[0,i].plot(z_pred[sortind,i], density(z_pred[sortind,i]), label='GP Model')
+            axs[0,i].set_title('z_%d'%(i+1)) 
 
         # plot the covariance matrix      
         X,Y = np.meshgrid(np.linspace(0,1,10), np.linspace(0,1,10))
         c_grid_np = np.vstack([X.ravel(), Y.ravel()]).T 
         c_grid = torch.tensor(c_grid_np, dtype=torch.float32).to(device)
-        K = gp_model.covar_module(c_grid).to_dense()
-        K = K.mean(axis=0).cpu().numpy()
-        energy = K.mean(axis=1)
-        axs[0,3].tricontourf(c_grid_np[:,0], c_grid_np[:,1], energy, 
-        cmap='plasma')
-        axs[0,3].set_xlabel('C1')
-        axs[0,3].set_ylabel('C2')
+        # K = gp_model.covar_module(c_grid).to_dense()
+        # K = K.mean(axis=0).cpu().numpy()
+        # energy = K.mean(axis=1)
+        # axs[0,3].tricontourf(c_grid_np[:,0], c_grid_np[:,1], energy, 
+        # cmap='plasma')
+        # axs[0,3].set_xlabel('C1')
+        # axs[0,3].set_ylabel('C2')
 
         # plot covariance of randomly selected points
-        idx = RNG.choice(range(n_train),size=4, replace=False)  
+        idx = RNG.choice(range(n_train),size=3, replace=False)  
         for i, id_ in enumerate(idx):
             ci = C_train[id_,:].reshape(1, 2)
             ci = torch.tensor(ci, dtype=torch.float32).to(device)

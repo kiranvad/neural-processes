@@ -1,6 +1,7 @@
 import numpy as np 
 import torch
 import matplotlib.pyplot as plt
+import pdb
 
 # create synthetic data
 class PhasemapSimulator:
@@ -9,6 +10,7 @@ class PhasemapSimulator:
         """
         self.n_domain = n_domain
         self.t = np.linspace(0,1, num=self.n_domain)
+        self.n_grid = n_grid
         x = np.linspace(0,1, n_grid)
         y = np.linspace(0,1, n_grid)
         X,Y = np.meshgrid(x,y)
@@ -82,3 +84,59 @@ class PhasemapSimulator:
         plt.close()
 
 
+class NoisyPhaseSimulator(PhasemapSimulator):
+    def __init__(self, n_grid=50, n_domain=100, use_random_warping=False):
+        super().__init__(n_grid=n_grid, n_domain=n_domain, use_random_warping=use_random_warping)
+
+    def get_label(self, c):
+        pos = self._rescale_pos(c)
+        Z1 = self._multivariate_gaussian(pos, 
+                                np.array([-1, -1]), 
+                                np.array([[ 0.8, 0.01], [0.01, 0.8]])
+                                )
+        Z2 = self._multivariate_gaussian(pos, 
+                                np.array([2., 2.]), 
+                                np.array([[ 0.2 , 0.01], [0.01, 0.2]])
+                                )
+        Z3 = self._multivariate_gaussian(pos, 
+                                np.array([-2., 2.5]), 
+                                np.array([[ 0.4 , 0.01], [0.01, 0.4]])
+                                )
+        probs = np.asarray([Z1, Z2, Z3])
+        argmax = np.argmax(probs)
+        if probs[argmax]>1e-2:
+            return argmax+1 
+        else:
+            return 0
+
+    def simulate(self, c):
+        label = self.get_label(c)
+        if label==0:
+            y = self.phi(self.t, 1e-3, 1e-1)
+        else:
+            y = self.g(self.gamma(), label)
+
+        noise = 0.05*np.random.normal(size=self.n_domain)
+
+        return y+noise   
+
+    def _multivariate_gaussian(self, x, mu, Sigma):
+        """Return the multivariate Gaussian distribution on array pos."""
+
+        n = mu.shape[0]
+        Sigma_det = np.linalg.det(Sigma)
+        Sigma_inv = np.linalg.inv(Sigma)
+        N = np.sqrt((2*np.pi)**n * Sigma_det)
+        # This einsum call calculates (x-mu)T.Sigma-1.(x-mu) in a vectorized
+        # way across all the input variables.
+        fac = ((x-mu).T)@Sigma_inv@(x-mu)
+
+        return np.exp(-fac / 2) / N
+
+    def _rescale_pos(self, pos):
+        """Give a pos, rescale it to (-3,3)"""
+        x, y = pos 
+        x_ = x*6-3
+        y_ = y*6-3
+
+        return x_, y_

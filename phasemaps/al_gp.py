@@ -28,15 +28,14 @@ N_LATENT = 3
 N_COMPOSITION = 2
 
 # Define the simulator 
-sim = PhasemapSimulator(n_grid=100, use_random_warping=False)
+sim = NoisyPhaseSimulator(n_grid=100, use_random_warping=False)
 sim.generate()
 time = sim.t
 sim.plot(SAVE_DIR+'phasemap.png')
 
 # Specify the Neural Process model
 np_model = NeuralProcess(1, 1, 50, N_LATENT, 50).to(device)
-np_model.load_state_dict(torch.load('./pretrain/trained_model.pt',
-map_location=device))
+np_model.load_state_dict(torch.load('./pretrain/trained_model.pt', map_location=device))
 
 C_train, y_train, C_initial, y_initial, C_pool, y_pool, colomap_indx = generate_pool(sim, N_INITIAL,RNG)
 

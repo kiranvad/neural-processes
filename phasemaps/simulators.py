@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 import pdb
 
 # create synthetic data
-class PhasemapSimulator:
-    def __init__(self, n_grid=50, n_domain=100, use_random_warping=False):
+class PrabolicPhases:
+    def __init__(self, n_grid=50, n_domain=100, use_random_warping=False, noise=False):
         """ Simulate a phasemap with domain warping of functions
         """
         self.n_domain = n_domain
+        self.noise = noise
         self.t = np.linspace(0,1, num=self.n_domain)
         self.n_grid = n_grid
         x = np.linspace(0,1, n_grid)
@@ -50,6 +51,9 @@ class PhasemapSimulator:
         label = self.get_label(c)
         y = self.g(self.gamma(), label)
 
+        if self.noise:
+            y += 0.05*np.random.normal(size=self.n_domain)
+
         return y
     
     def get_label(self, c):
@@ -84,9 +88,9 @@ class PhasemapSimulator:
         plt.close()
 
 
-class NoisyPhaseSimulator(PhasemapSimulator):
-    def __init__(self, n_grid=50, n_domain=100, use_random_warping=False):
-        super().__init__(n_grid=n_grid, n_domain=n_domain, use_random_warping=use_random_warping)
+class GaussianPhases(PrabolicPhases):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def get_label(self, c):
         pos = self._rescale_pos(c)
@@ -116,9 +120,10 @@ class NoisyPhaseSimulator(PhasemapSimulator):
         else:
             y = self.g(self.gamma(), label)
 
-        noise = 0.05*np.random.normal(size=self.n_domain)
+        if self.noise:
+            y += 0.05*np.random.normal(size=self.n_domain)
 
-        return y+noise   
+        return y   
 
     def _multivariate_gaussian(self, x, mu, Sigma):
         """Return the multivariate Gaussian distribution on array pos."""

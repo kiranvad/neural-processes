@@ -34,6 +34,12 @@ class GPModel(gpytorch.models.ExactGP):
             gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
         )
 
+    def get_covaraince(self, x, xp):          
+        cov = self.covar_module(x, xp).to_dense()
+        K = cov.mean(axis=0).cpu().numpy().squeeze()
+
+        return K
+
 
 def train(i_query, n_tasks, data, time, np_model, n_iterations):
     # collect current z predictions
@@ -53,7 +59,7 @@ def train(i_query, n_tasks, data, time, np_model, n_iterations):
 
     # Use the adam optimizer
     # Includes GaussianLikelihood parameters
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)  
+    optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)  
 
     # "Loss" for GPs - the marginal log likelihood
     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
@@ -193,4 +199,7 @@ def update_npmodel(time, np_model, data):
     loss = np_trainer.epoch_loss_history[-1]
     print('NP model loss : %.2f'%loss)
 
-    return
+    # freeze model training
+    np_model.training = False
+
+    return np_model, loss

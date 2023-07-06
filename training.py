@@ -5,7 +5,7 @@ from torch import nn
 from torch.distributions.kl import kl_divergence
 from utils import (context_target_split, batch_context_target_mask,
                    img_mask_to_np_input)
-
+import matplotlib.pyplot as plt
 
 class NeuralProcessTrainer():
     """
@@ -46,7 +46,7 @@ class NeuralProcessTrainer():
         self.steps = 0
         self.epoch_loss_history = []
 
-    def train(self, data_loader, epochs):
+    def train(self, data_loader, epochs, x_plot, savedir='./'):
         """
         Trains Neural Process.
 
@@ -103,7 +103,24 @@ class NeuralProcessTrainer():
                     print("iteration {}, loss {:.3f}".format(self.steps, loss.item()))
             if self.verbose:
                 print("Epoch: {}, Avg_loss: {}".format(epoch, epoch_loss / len(data_loader)))
+
             self.epoch_loss_history.append(epoch_loss / len(data_loader))
+            self.plot_samples(x_plot)
+            plt.savefig(savedir+'%d.png'%epoch)
+            plt.close()
+
+    def plot_samples(self, x_plot):
+        fig, ax = plt.subplots()
+        with torch.no_grad():
+            for i in range(100):
+                z_sample = torch.randn((1, self.neural_process.z_dim))
+                mu, _ = self.neural_process.xz_to_y(x_plot, z_sample)
+                ax.plot(x_plot.numpy()[0], mu.detach().numpy()[0], 
+                        c='b', alpha=0.5)
+                ax.set_title("Loss: %.3f"%self.epoch_loss_history[-1])
+        
+        return
+            
 
     def _loss(self, p_y_pred, y_target, q_target, q_context):
         """

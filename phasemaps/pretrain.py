@@ -1,5 +1,5 @@
 import sys, os, pdb, shutil
-sys.path.append('/mmfs1/home/kiranvad/kiranvad/hyak/SAXSpy/neural-processes/')
+sys.path.append('/mmfs1/home/kiranvad/kiranvad/neural-processes/')
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
@@ -59,7 +59,7 @@ num_context = 75
 num_target = 25
 
 data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-optimizer = torch.optim.Adam(neuralprocess.parameters(), lr=3e-4)
+optimizer = torch.optim.Adam(neuralprocess.parameters(), lr=1e-3)
 np_trainer = NeuralProcessTrainer(device, neuralprocess, optimizer,
                                   num_context_range=(num_context, num_context),
                                   num_extra_target_range=(num_target, num_target), 
@@ -67,9 +67,6 @@ np_trainer = NeuralProcessTrainer(device, neuralprocess, optimizer,
 
 neuralprocess.training = True
 np_trainer.train(data_loader, 30)    
-
-x_target = torch.Tensor(np.linspace(0, 1, 100))
-x_target = x_target.unsqueeze(1).unsqueeze(0)
 
 for i in range(100):
     z_sample = torch.randn((1, z_dim))
@@ -92,9 +89,6 @@ x_context, y_context, _, _ = context_target_split(x[0:1], y[0:1],
                                                   num_context, 
                                                   num_target)
 
-# Create a set of target points corresponding to entire [-pi, pi] range
-x_target = torch.Tensor(np.linspace(0, 1, 100))
-x_target = x_target.unsqueeze(1).unsqueeze(0)
 
 neuralprocess.training = False
 
@@ -111,9 +105,6 @@ plt.savefig(SAVE_DIR+'samples_from_posterior.png')
 plt.close()
 
 # plot grid
-x_target = torch.Tensor(np.linspace(0, 1, 100))
-x_target = x_target.unsqueeze(1).unsqueeze(0)
-
 z1 = torch.linspace(-3,3,10)
 z2 = torch.linspace(-3,3,10)
 fig, axs = plt.subplots(10,10, figsize=(2*10, 2*10))

@@ -124,7 +124,6 @@ class SineData(Dataset):
             x = torch.linspace(-pi, pi, num_points).unsqueeze(1)
             # Shape (num_points, y_dim)
             y = a * torch.sin(x - b)
-            pdb.set_trace()
             self.data.append((x, y))
 
     def __getitem__(self, index):

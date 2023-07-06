@@ -21,7 +21,7 @@ class Encoder(nn.Module):
         Dimension of output representation r.
     """
     def __init__(self, x_dim, y_dim, h_dim, r_dim):
-        super(Encoder, self).__init__()
+        super().__init__()
 
         self.x_dim = x_dim
         self.y_dim = y_dim
@@ -46,7 +46,6 @@ class Encoder(nn.Module):
         """
         input_pairs = torch.cat((x, y), dim=1)
         return self.input_to_hidden(input_pairs)
-
 
 class MuSigmaEncoder(nn.Module):
     """
@@ -111,12 +110,19 @@ class Decoder(nn.Module):
         self.h_dim = h_dim
         self.y_dim = y_dim
 
+        # layers = [nn.Linear(x_dim + z_dim, h_dim),
+        #           nn.ReLU(inplace=True),
+        #           nn.Linear(h_dim, h_dim),
+        #           nn.ReLU(inplace=True),
+        #           nn.Linear(h_dim, h_dim),
+        #           nn.ReLU(inplace=True)]
+
         layers = [nn.Linear(x_dim + z_dim, h_dim),
-                  nn.ReLU(inplace=True),
+                  nn.Sigmoid(),
                   nn.Linear(h_dim, h_dim),
-                  nn.ReLU(inplace=True),
+                  nn.Sigmoid(),
                   nn.Linear(h_dim, h_dim),
-                  nn.ReLU(inplace=True)]
+                  nn.Sigmoid()]
 
         self.xz_to_hidden = nn.Sequential(*layers)
         self.hidden_to_mu = nn.Linear(h_dim, y_dim)

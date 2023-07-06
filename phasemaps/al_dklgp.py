@@ -29,7 +29,7 @@ N_LATENT = 3
 N_COMPOSITION = 2
 
 # Define the simulator 
-sim = GaussianPhases(n_grid=100, use_random_warping=False, noise=True)
+sim = PrabolicPhases(n_grid=100, use_random_warping=False, noise=True)
 sim.generate()
 time = sim.t
 sim.plot(SAVE_DIR+'phasemap.png')
@@ -142,9 +142,11 @@ for i in range(N_QUERIES):
     colomap_indx.append(i+1)
 
     if np.remainder(100*(i)/N_QUERIES,10)==0:
-        plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT, colomap_indx) 
-        np_model, np_loss = update_npmodel(time, np_model, data)
+        plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT, colomap_indx)
         plt.savefig(SAVE_DIR+'itr_%d.png'%i)
+        plt.close()
+        plot_gpmodel(time, gp_model, np_model, C_train, y_train, SAVE_DIR+'gpmodel_itr_%d.png'%i)   
+        np_model, np_loss = update_npmodel(time, np_model, data)
         np_model_losses.append(np_loss)
 
     gp_model, gp_loss = train(i, N_LATENT,data, time, np_model, N_GP_ITERATIONS)
@@ -160,5 +162,5 @@ plot_loss_profiles(np_model_losses, gp_model_losses, SAVE_DIR+'losses.png')
 plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT, colomap_indx) 
 plt.savefig(SAVE_DIR+'itr_%d.png'%i)
 plot_phasemap_pred(sim, time, gp_model, np_model, SAVE_DIR)
-plot_gpmodel(time, gp_model, np_model, C_train, y_train, SAVE_DIR+'model_c2z.png')    
+plot_gpmodel(time, gp_model, np_model, C_train, y_train, SAVE_DIR+'model_c2z_final.png')    
 plot_npmodel(time, N_LATENT, np_model, SAVE_DIR+'samples_in_latentgrid.png')

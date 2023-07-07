@@ -83,7 +83,10 @@ def train(i_query, n_tasks, data, time, np_model, n_iterations):
 def predict(model, x):
     model.eval()
     with torch.no_grad():
-        x = torch.tensor(x, dtype=torch.float32).to(device)
+        if not torch.is_tensor(x):
+            x = torch.tensor(x, dtype=torch.float32).to(device)
+        else:
+            x = x.clone().detach()
         dist = model(x)
 
         return dist.mean.cpu().numpy(), dist.stddev.cpu().numpy()

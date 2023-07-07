@@ -1,18 +1,18 @@
 import os, shutil, pdb, sys
-sys.path.append('/mmfs1/home/kiranvad/kiranvad/neural-processes/UV_VIS')
-sys.path.append('/mmfs1/home/kiranvad/kiranvad/neural-processes/phasemaps')
 
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.colors import Normalize
-
 import torch
 from torch.utils.data import DataLoader, Dataset
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-from phasemaps.plot import *
-from phasemaps.activelearn import *
-from UV_VIS.helpers import GNPPhases
+sys.path.append('/mmfs1/home/kiranvad/kiranvad/neural-processes')
+sys.path.append('./helpers')
+from neural_process import NeuralProcess
+from helpers import GNPPhases
+from activelearn_plot import *
+from activelearn import *
 
 SAVE_DIR = './gp/'
 if os.path.exists(SAVE_DIR):
@@ -68,8 +68,14 @@ for i in range(N_QUERIES):
 
 """Plotting after training"""
 plot_loss_profiles(np_model_losses, gp_model_losses, SAVE_DIR+'losses.png')
+
 plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT, colomap_indx)
-plt.savefig(SAVE_DIR+'itr_%d.png'%i) 
-plot_phasemap_pred(sim, time, gp_model, np_model, SAVE_DIR)
+plt.savefig(SAVE_DIR+'itr_%d.png'%i)
+
+plot_phasemap_pred(sim, time, gp_model, np_model, SAVE_DIR+'final_compare.png')
 plot_gpmodel(time, gp_model, np_model, C_train, y_train, SAVE_DIR+'model_c2z.png')    
 plot_npmodel(time, N_LATENT, np_model, SAVE_DIR+'samples_in_latentgrid.png')
+
+fig, ax = plt.subplots(figsize=(10,10))
+plot_gpmodel_grid(ax, time, C_train, gp_model, np_model, show_sigma=False)
+plt.savefig(SAVE_DIR+'phasemap_pred.png') 

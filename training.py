@@ -46,7 +46,7 @@ class NeuralProcessTrainer():
         self.steps = 0
         self.epoch_loss_history = []
 
-    def train(self, data_loader, epochs, x_plot, savedir='./'):
+    def train(self, data_loader, epochs, x_plot=None, savedir='./'):
         """
         Trains Neural Process.
 
@@ -105,9 +105,10 @@ class NeuralProcessTrainer():
                 print("Epoch: {}, Avg_loss: {}".format(epoch, epoch_loss / len(data_loader)))
 
             self.epoch_loss_history.append(epoch_loss / len(data_loader))
-            self.plot_samples(x_plot)
-            plt.savefig(savedir+'%d.png'%epoch)
-            plt.close()
+            if x_plot is not None:
+                self.plot_samples(x_plot)
+                plt.savefig(savedir+'%d.png'%epoch)
+                plt.close()
 
     def plot_samples(self, x_plot):
         fig, ax = plt.subplots()

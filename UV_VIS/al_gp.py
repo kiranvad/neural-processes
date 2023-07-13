@@ -79,3 +79,6 @@ plot_npmodel(time, N_LATENT, np_model, SAVE_DIR+'samples_in_latentgrid.png')
 fig, ax = plt.subplots(figsize=(10,10))
 plot_gpmodel_grid(ax, time, C_train, gp_model, np_model, show_sigma=False)
 plt.savefig(SAVE_DIR+'phasemap_pred.png') 
+
+torch.save(np_model.state_dict(), SAVE_DIR+'np_model.pt')
+torch.save(gp_model.state_dict(), SAVE_DIR+'gp_model.pt')

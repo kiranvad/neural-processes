@@ -59,7 +59,7 @@ def train(i_query, n_tasks, data, time, np_model, n_iterations):
 
     # Use the adam optimizer
     # Includes GaussianLikelihood parameters
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-2)  
+    optimizer = torch.optim.Adam(model.parameters(), lr=5e-3)  
 
     # "Loss" for GPs - the marginal log likelihood
     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
@@ -74,7 +74,7 @@ def train(i_query, n_tasks, data, time, np_model, n_iterations):
         loss.backward(retain_graph=True)
 
         optimizer.step()
-        # print('%d - loss : %.3f'%(i, loss.item()))
+        print('%d - loss : %.3f'%(i, loss.item()))
 
     return model, loss.item()
 

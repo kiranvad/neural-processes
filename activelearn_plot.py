@@ -76,7 +76,7 @@ def plot_iteration(query_idx, time, data, gp_model, np_model, utility, n_queries
             axs['B1'].set_xlabel('t', fontsize=20)
             axs['B1'].set_ylabel('f(t)', fontsize=20) 
 
-    plot_gpmodel_grid(axs['C'], time, C_train, gp_model, np_model, show_sigma=True)
+    plot_gpmodel_grid(axs['C'], time, C_train, gp_model, np_model, show_sigma=False)
 
     return 
 

@@ -25,7 +25,7 @@ print('Saving the results to %s'%SAVE_DIR)
 BATCH_SIZE = 2
 RNG = np.random.default_rng()
 N_INITIAL = 5 # number of initial points for AL
-N_QUERIES = 20 # Total number of queries to simulator/oracle
+N_QUERIES = 10 # Total number of queries to simulator/oracle
 N_GP_ITERATIONS = 200 # number of GP fitting iterations
 N_LATENT = 2
 N_COMPOSITION = 2

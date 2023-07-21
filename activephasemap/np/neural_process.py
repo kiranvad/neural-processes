@@ -1,8 +1,9 @@
 import torch
-from models import Encoder, MuSigmaEncoder, Decoder
 from torch import nn
 from torch.distributions import Normal
-from utils import img_mask_to_np_input
+
+from .utils import img_mask_to_np_input
+from .models import Encoder, MuSigmaEncoder, Decoder
 
 
 class NeuralProcess(nn.Module):

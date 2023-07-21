@@ -1,10 +1,12 @@
 import torch
 from random import randint
-from neural_process import NeuralProcessImg
 from torch import nn
 from torch.distributions.kl import kl_divergence
-from utils import (context_target_split, batch_context_target_mask,
+
+from .neural_process import NeuralProcessImg
+from .utils import (context_target_split, batch_context_target_mask,
                    img_mask_to_np_input)
+                   
 import matplotlib.pyplot as plt
 
 class NeuralProcessTrainer():

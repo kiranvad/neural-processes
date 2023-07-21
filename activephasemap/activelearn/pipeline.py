@@ -12,10 +12,9 @@ from gpytorch.likelihoods import MultitaskGaussianLikelihood
 from gpytorch.mlls import SumMarginalLogLikelihood
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-sys.path.append('/mmfs1/home/kiranvad/kiranvad/neural-processes')
-from neural_process import NeuralProcess
-from training import NeuralProcessTrainer
-from utils import context_target_split
+from activephasemap.np.neural_process import NeuralProcess
+from activephasemap.np.training import NeuralProcessTrainer
+from activephasemap.np.utils import context_target_split
 
 # Define a GP (batch independent)
 class GPModel(gpytorch.models.ExactGP):
@@ -74,7 +73,7 @@ def train(i_query, n_tasks, data, time, np_model, n_iterations):
         loss.backward(retain_graph=True)
 
         optimizer.step()
-        print('%d - loss : %.3f'%(i, loss.item()))
+        # print('%d - loss : %.3f'%(i, loss.item()))
 
     return model, loss.item()
 

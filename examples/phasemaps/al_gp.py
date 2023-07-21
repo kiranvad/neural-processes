@@ -8,10 +8,11 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-sys.path.append(['./simulators', './plot', './activelearn'])
-from simulators import *
-from plot import *
-from activelearn import *
+sys.path.append(['./simulators'])
+from simulators import PrabolicPhases, GaussianPhases
+from activephasemap.np.neural_process import NeuralProcess
+from activephasemap.activelearn import pipeline, visuals
+from activephasemap.activelearn.pipeline import utility 
 
 SAVE_DIR = './gp/'
 if os.path.exists(SAVE_DIR):
@@ -37,28 +38,28 @@ sim.plot(SAVE_DIR+'phasemap.png')
 np_model = NeuralProcess(1, 1, 50, N_LATENT, 50).to(device)
 np_model.load_state_dict(torch.load('./pretrain/trained_model.pt', map_location=device))
 
-C_train, y_train, C_initial, y_initial, C_pool, y_pool, colomap_indx = generate_pool(sim, N_INITIAL,RNG)
+C_train, y_train, C_initial, y_initial, C_pool, y_pool, colomap_indx = pipeline.generate_pool(sim, N_INITIAL,RNG)
 
-data = ActiveLearningDataset(C_initial,y_initial)
-gp_model,_ = train(0, N_LATENT, data, time, np_model, N_GP_ITERATIONS)
+data = pipeline.ActiveLearningDataset(C_initial,y_initial)
+gp_model,_ = pipeline.train(0, N_LATENT, data, time, np_model, N_GP_ITERATIONS)
 
 ## Perform active learning campaign
 np_model_losses = []
 gp_model_losses = []
 for i in range(N_QUERIES):
-    query_idx = query_strategy(gp_model, C_pool, n_instances=1)
+    query_idx = pipeline.query_strategy(gp_model, C_pool, n_instances=1)
     # query_idx = RNG.choice(range(len(C_pool)),size=1,replace=False)    
     data.update(C_pool[query_idx], y_pool[query_idx])
     colomap_indx.append(i+1)
 
     if np.remainder(100*(i)/N_QUERIES,10)==0:
-        plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT, colomap_indx)
+        visuals.plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT, colomap_indx)
         plt.savefig(SAVE_DIR+'itr_%d.png'%i)
         plt.close()
-        plot_gpmodel(time, gp_model, np_model, C_train, y_train, SAVE_DIR+'gpmodel_itr_%d.png'%i)   
-        np_model, np_loss = update_npmodel(time, np_model, data)
+        visuals.plot_gpmodel(time, gp_model, np_model, C_train, y_train, SAVE_DIR+'gpmodel_itr_%d.png'%i)   
+        np_model, np_loss = pipeline.update_npmodel(time, np_model, data)
         np_model_losses.append(np_loss)
-    gp_model, gp_loss = train(i, N_LATENT,data, time, np_model, N_GP_ITERATIONS)
+    gp_model, gp_loss = pipeline.train(i, N_LATENT,data, time, np_model, N_GP_ITERATIONS)
     print('Iter %d/%d - Loss: %.3f ' % (i+1, N_QUERIES, gp_loss))
     gp_model_losses.append(gp_loss)
     # remove queried instance from pool
@@ -66,9 +67,9 @@ for i in range(N_QUERIES):
     y_pool = np.delete(y_pool, query_idx, axis=0)
 
 """Plotting after training"""
-plot_loss_profiles(np_model_losses, gp_model_losses, SAVE_DIR+'losses.png')
-plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT, colomap_indx)
+visuals.plot_loss_profiles(np_model_losses, gp_model_losses, SAVE_DIR+'losses.png')
+visuals.plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT, colomap_indx)
 plt.savefig(SAVE_DIR+'itr_%d.png'%i) 
-plot_phasemap_pred(sim, time, gp_model, np_model, SAVE_DIR)
-plot_gpmodel(time, gp_model, np_model, C_train, y_train, SAVE_DIR+'model_c2z.png')    
-plot_npmodel(time, N_LATENT, np_model, SAVE_DIR+'samples_in_latentgrid.png')
+visuals.plot_phasemap_pred(sim, time, gp_model, np_model, SAVE_DIR)
+visuals.plot_gpmodel(time, gp_model, np_model, C_train, y_train, SAVE_DIR+'model_c2z.png')    
+visuals.plot_npmodel(time, N_LATENT, np_model, SAVE_DIR+'samples_in_latentgrid.png')

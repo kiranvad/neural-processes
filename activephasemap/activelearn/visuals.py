@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 RNG = np.random.default_rng()
 import sys, pdb
-from activelearn import utility, from_comp_to_spectrum
+from activephasemap.activelearn.pipeline import utility, from_comp_to_spectrum
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 from scipy import stats
 import seaborn as sns 

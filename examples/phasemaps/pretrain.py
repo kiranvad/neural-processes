@@ -1,15 +1,16 @@
 import sys, os, pdb, shutil
-sys.path.append('/mmfs1/home/kiranvad/kiranvad/neural-processes/')
 import numpy as np
 import matplotlib.pyplot as plt
-import torch
-from datasets import MultiPeakGaussians
 from math import pi
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-from neural_process import NeuralProcess
+import torch
 from torch.utils.data import DataLoader
-from training import NeuralProcessTrainer
-from utils import context_target_split
+
+from activephasemap.np.neural_process import NeuralProcess
+from activephasemap.np.training import NeuralProcessTrainer
+from activephasemap.np.utils import context_target_split
+from activephasemap.np.datasets import MultiPeakGaussians
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 SAVE_DIR = './pretrain/'
 if os.path.exists(SAVE_DIR):

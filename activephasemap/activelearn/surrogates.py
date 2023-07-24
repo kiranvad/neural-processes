@@ -54,7 +54,7 @@ def train_gp(i_query, n_tasks, data, time, np_model, n_iterations):
 
     # Use the adam optimizer
     # Includes GaussianLikelihood parameters
-    optimizer = torch.optim.Adam(model.parameters(), lr=5e-3)  
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)  
 
     # "Loss" for GPs - the marginal log likelihood
     mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
@@ -86,6 +86,13 @@ class FeatureExtractor(torch.nn.Sequential):
         self.add_module('relu3', torch.nn.ReLU())                
         self.add_module('linear4', torch.nn.Linear(8, 2))
 
+class MinFeatureExtractor(torch.nn.Sequential):
+    def __init__(self, dim):
+        super().__init__()
+        self.add_module('linear1', torch.nn.Linear(dim, 8))
+        self.add_module('relu1', torch.nn.ReLU())              
+        self.add_module('linear4', torch.nn.Linear(8, 2))
+
 class DKLGPModel(gpytorch.models.ExactGP):
         def __init__(self, train_x, train_y, likelihood, z_dim):
             super().__init__(train_x, train_y, likelihood)
@@ -96,7 +103,8 @@ class DKLGPModel(gpytorch.models.ExactGP):
             self.mean_ = gpytorch.means.ConstantMean(batch_shape=bs)
             self.mean_module = self.mean_
             self.covar_module = self.grid
-            self.feature_extractor = FeatureExtractor(train_x.shape[1])
+            # self.feature_extractor = FeatureExtractor(train_x.shape[1])
+            self.feature_extractor = MinFeatureExtractor(train_x.shape[1])
             # This module will scale the NN features so that they're nice values
             self.scale_to_bounds = gpytorch.utils.grid.ScaleToBounds(-1., 1.)
 
@@ -182,12 +190,12 @@ class NPModelDataset(Dataset):
 
 def update_npmodel(time, np_model, data):
     batch_size = 2
-    num_context = 75
+    num_context = 25
     num_target = 25
+    num_iterations = 30
     dataset = NPModelDataset(time, data.y)
-    data_loader = DataLoader(dataset, 
-    batch_size=batch_size, shuffle=True)
-    np_optimizer = torch.optim.Adam(np_model.parameters(), lr=3e-4)
+    data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    np_optimizer = torch.optim.Adam(np_model.parameters(), lr=1e-3)
     np_trainer = NeuralProcessTrainer(device, 
     np_model, np_optimizer,
     num_context_range=(num_context, num_context),
@@ -196,7 +204,7 @@ def update_npmodel(time, np_model, data):
     )
 
     np_model.training = True
-    np_trainer.train(data_loader, 30)
+    np_trainer.train(data_loader, num_iterations)
     loss = np_trainer.epoch_loss_history[-1]
     print('NP model loss : %.2f'%loss)
 

@@ -37,7 +37,7 @@ sim.plot(SAVE_DIR+'phasemap.png')
 np_model = NeuralProcess(1, 1, 50, N_LATENT, 50).to(device)
 np_model.load_state_dict(torch.load('./pretrain/trained_model.pt', map_location=device))
 
-C_train, y_train, C_initial, y_initial, C_pool, y_pool, colomap_indx = pipeline.generate_pool(sim, N_INITIAL,RNG)
+C_train, y_train, C_initial, y_initial, C_pool, y_pool = pipeline.generate_pool(sim, N_INITIAL,RNG)
 
 data = pipeline.ActiveLearningDataset(C_initial,y_initial)
 gp_model,_ = surrogates.train_dkl(0, N_LATENT, data, time, np_model, N_GP_ITERATIONS)
@@ -49,10 +49,9 @@ for i in range(N_QUERIES):
     query_idx = pipeline.query_strategy(gp_model, C_pool, n_instances=1)
     # query_idx = RNG.choice(range(len(C_pool)),size=1,replace=False)    
     data.update(C_pool[query_idx], y_pool[query_idx])
-    colomap_indx.append(i+1)
 
     if np.remainder(100*(i)/N_QUERIES,10)==0:
-        visuals.plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT, colomap_indx)
+        visuals.plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT)
         plt.savefig(SAVE_DIR+'itr_%d.png'%i)
         plt.close()
         visuals.plot_gpmodel(time, gp_model, np_model, C_train, y_train, SAVE_DIR+'gpmodel_itr_%d.png'%i)   
@@ -69,7 +68,7 @@ for i in range(N_QUERIES):
 
 # Plotting after training
 visuals.plot_loss_profiles(np_model_losses, gp_model_losses, SAVE_DIR+'losses.png')
-visuals.plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT, colomap_indx) 
+visuals.plot_iteration(query_idx, time, data, gp_model, np_model, utility, N_QUERIES, C_train, N_LATENT) 
 plt.savefig(SAVE_DIR+'itr_%d.png'%i)
 visuals.plot_phasemap_pred(sim, time, gp_model, np_model, SAVE_DIR+'compare_spectra_pred.png')
 visuals.plot_gpmodel(time, gp_model, np_model, C_train, y_train, SAVE_DIR+'model_c2z_final.png')    

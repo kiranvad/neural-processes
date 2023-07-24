@@ -45,13 +45,12 @@ def generate_pool(sim, n_samples, RNG):
                             )
     C_initial = C_train[initial_idx,:]
     y_initial = y_train[initial_idx,:]
-    colomap_indx = [0]*n_samples
     # generate the pool
     # remove the initial data from the training dataset
     C_pool = np.delete(C_train, initial_idx, axis=0)
     y_pool = np.delete(y_train, initial_idx, axis=0)
 
-    return C_train, y_train, C_initial, y_initial, C_pool, y_pool, colomap_indx
+    return C_train, y_train, C_initial, y_initial, C_pool, y_pool
 
 def utility(model, C_query):
     _, sigma = predict(model, C_query)

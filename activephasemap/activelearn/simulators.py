@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import glob
 from scipy.spatial.distance import cdist
 import pandas as pd 
-from scipy import interpolate
+from scipy import interpolate 
+import pdb
 
 # create synthetic data
 class PrabolicPhases:
@@ -199,3 +200,33 @@ class GNPPhases:
             plt.close()
         else:
             plt.show()
+
+
+class PhaseMappingExperiment:
+    def __init__(self, iter, dir, bounds):
+        self.dir = dir 
+        comps, spectra = [], []
+        for k in range(iter+1):
+            comps.append(np.load(self.dir+'new_%d.npy'%k))
+            xlsx = pd.read_excel(self.dir+'spectra_%d.xlsx'%k, engine='openpyxl')
+            spectra.append(xlsx.values)
+        self.comps = np.vstack(comps)
+        self.points = self.comps
+        self.spectra = np.vstack(spectra)
+        self.t = np.linspace(0, 1, self.spectra.shape[1])
+        self.n_domain = len(self.t)
+        
+    def simulate(self, c):
+        lookup_dist = cdist(c.reshape(1,-1), self.comps)
+        lookup_cid = np.argmin(lookup_dist)
+        y = self.spectra[lookup_cid,:]
+        spline = interpolate.splrep(self.t, y, s=0)
+        I_grid = interpolate.splev(self.t, spline, der=0)
+        norm = np.sqrt(np.trapz(I_grid**2, self.t))
+
+        return I_grid/norm 
+    
+    def generate(self):
+        self.F = [self.simulate(ci) for ci in self.comps]
+
+        return

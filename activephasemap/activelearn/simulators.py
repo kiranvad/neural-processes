@@ -215,18 +215,17 @@ class PhaseMappingExperiment:
         self.spectra = np.vstack(spectra)
         self.t = np.linspace(0, 1, self.spectra.shape[1])
         self.n_domain = len(self.t)
-        
-    def simulate(self, c):
-        lookup_dist = cdist(c.reshape(1,-1), self.comps)
-        lookup_cid = np.argmin(lookup_dist)
-        y = self.spectra[lookup_cid,:]
-        spline = interpolate.splrep(self.t, y, s=0)
-        I_grid = interpolate.splev(self.t, spline, der=0)
-        norm = np.sqrt(np.trapz(I_grid**2, self.t))
 
-        return I_grid/norm 
-    
     def generate(self):
-        self.F = [self.simulate(ci) for ci in self.comps]
+        self.F = [self.spectra[i,:] for i in range(len(self.comps))]
 
-        return
+        return 
+
+    def plot(self, fname):
+        fig, ax = plt.subplots()
+        for fi in self.F:
+            ax.plot(self.t, fi)
+        plt.savefig(fname)
+        plt.close()
+
+        return 

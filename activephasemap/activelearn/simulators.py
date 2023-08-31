@@ -207,9 +207,10 @@ class PhaseMappingExperiment:
         self.dir = dir 
         comps, spectra = [], []
         for k in range(iter+1):
-            comps.append(np.load(self.dir+'new_%d.npy'%k))
-            xlsx = pd.read_excel(self.dir+'spectra_%d.xlsx'%k, engine='openpyxl')
+            comps.append(np.load(self.dir+'comps_%d.npy'%k))
+            xlsx = pd.read_excel(self.dir+'spectra_%d.xlsx'%k, engine='openpyxl') 
             spectra.append(xlsx.values)
+            print('Iteration %d : '%k, comps[k].shape, spectra[k].shape)
         self.comps = np.vstack(comps)
         self.points = self.comps
         self.spectra = np.vstack(spectra)

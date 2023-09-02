@@ -112,6 +112,7 @@ class NeuralProcess(nn.Module):
         if self.training:
             # Encode target and context (context needs to be encoded to
             # calculate kl term)
+            print(x_target.dtype, y_target.dtype)
             mu_target, sigma_target = self.xy_to_mu_sigma(x_target, y_target)
             mu_context, sigma_context = self.xy_to_mu_sigma(x_context, y_context)
             # Sample from encoded distribution using reparameterization trick

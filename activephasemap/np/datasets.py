@@ -19,7 +19,7 @@ class MultiPeakGaussians(Dataset):
             t = np.linspace(0,1, self.num_points)
             if self.warping:
                 t = self.gam(t)
-            y = self.g(t).astype(np.float32)
+            y = self.g(t).astype(np.double)
             self.data.append((x, torch.from_numpy(y).unsqueeze(1))) 
 
     def g(self, t):

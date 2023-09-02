@@ -16,7 +16,7 @@ def predict(model, x):
     model.eval()
     with torch.no_grad():
         if not torch.is_tensor(x):
-            x = torch.tensor(x, dtype=torch.float32).to(device)
+            x = torch.tensor(x, dtype=torch.double).to(device)
         else:
             x = x.clone().detach()
         dist = model(x)
@@ -25,10 +25,10 @@ def predict(model, x):
 
 def from_comp_to_spectrum(time, gp_model, np_model, c):
     with torch.no_grad():
-        c = torch.tensor(c, dtype=torch.float32).to(device)
+        c = torch.tensor(c, dtype=torch.double).to(device)
         z_sample,_ = predict(gp_model, c)
-        z_sample = torch.tensor(z_sample, dtype=torch.float32).to(device)
-        t = torch.from_numpy(time.astype(np.float32)).to(device)
+        z_sample = torch.tensor(z_sample, dtype=torch.double).to(device)
+        t = torch.from_numpy(time.astype(np.double)).to(device)
         t = t.repeat(c.shape[0]).view(c.shape[0], len(time), 1)
         mu, std = np_model.xz_to_y(t, z_sample)
 
@@ -37,8 +37,8 @@ def from_comp_to_spectrum(time, gp_model, np_model, c):
 # Active learning functions
 def generate_pool(sim, n_samples, RNG):
     # assemble initial data
-    C_train = sim.points.astype(np.float32)
-    y_train = np.asarray(sim.F, dtype=np.float32)
+    C_train = sim.points.astype(np.double)
+    y_train = np.asarray(sim.F, dtype=np.double)
     initial_idx = RNG.choice(range(len(C_train)),
                             size=n_samples, 
                             replace=False
@@ -84,8 +84,8 @@ class ActiveLearningDataset(Dataset):
         return xs, ys 
 
     def to_tensor(self, x, y):
-        x_ = torch.tensor(x, dtype=torch.float32).to(device)
-        y_ = torch.tensor(y, dtype=torch.float32).to(device)
+        x_ = torch.tensor(x, dtype=torch.double).to(device)
+        y_ = torch.tensor(y, dtype=torch.double).to(device)
 
         return x_, y_
     

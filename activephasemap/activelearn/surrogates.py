@@ -39,7 +39,7 @@ class GPModel(gpytorch.models.ExactGP):
 def train_gp(i_query, n_tasks, data, time, np_model, n_iterations):
     # collect current z predictions
     # with torch.no_grad():
-    t = torch.from_numpy(time.astype(np.float32))
+    t = torch.from_numpy(time.astype(torch.double))
     t = t.repeat(data.x.shape[0], 1).to(device)
     z, _ = np_model.xy_to_mu_sigma(t.unsqueeze(2),
     data.y.unsqueeze(2))
@@ -133,7 +133,7 @@ class DKLGPModel(gpytorch.models.ExactGP):
 def train_dkl(i_query, z_dim, data, time, np_model, n_iterations):
     # collect current z predictions
     # with torch.no_grad():
-    t = torch.from_numpy(time.astype(np.float32))
+    t = torch.from_numpy(time.astype(torch.double))
     t = t.repeat(data.x.shape[0], 1).to(device)
     z, _ = np_model.xy_to_mu_sigma(t.unsqueeze(2),
     data.y.unsqueeze(2))
@@ -177,7 +177,7 @@ class NPModelDataset(Dataset):
     def __init__(self, time, y):
         self.data = []
         for yi in y:
-            xi = torch.from_numpy(time.astype(np.float32))
+            xi = torch.from_numpy(time.astype(torch.double))
             xi = xi.view(xi.shape[0],1).to(device)
             yi = yi.view(yi.shape[0],1).to(device)
             self.data.append((xi,yi))
@@ -188,11 +188,12 @@ class NPModelDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-def update_npmodel(time, np_model, data):
-    batch_size = 2
-    num_context = 25
-    num_target = 25
-    num_iterations = 30
+def update_npmodel(time, np_model, data, **kwargs):
+    batch_size = kwargs.get('batch_size',  2)
+    num_context = kwargs.get('num_context',  25)
+    num_target = kwargs.get('num_target',  25)
+    num_iterations = kwargs.get('num_iterations',  30)
+    print(data.y.shape)
     dataset = NPModelDataset(time, data.y)
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     np_optimizer = torch.optim.Adam(np_model.parameters(), lr=1e-3)

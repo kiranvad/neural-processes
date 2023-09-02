@@ -68,7 +68,7 @@ def plot_iteration(query_idx, time, data, gp_model, np_model, utility, n_queries
             axs['B2'].set_xlabel('t', fontsize=20)
             axs['B2'].set_ylabel('f(t)', fontsize=20) 
             z_sample = torch.randn((1, z_dim)).to(device)
-            t = torch.from_numpy(time.astype(np.float32))
+            t = torch.from_numpy(time.astype(np.double))
             t = t.view(1, t.shape[0], 1).to(device)
             mu, _ = np_model.xz_to_y(t, z_sample)
             axs['B1'].plot(time, mu.cpu().squeeze(), color='grey')
@@ -82,7 +82,7 @@ def plot_iteration(query_idx, time, data, gp_model, np_model, utility, n_queries
 
 def plot_npmodel(time, z_dim, model, fname):
     # plot samples in the latent grid of p(y|z)
-    t = torch.from_numpy(time.astype(np.float32)).to(device)
+    t = torch.from_numpy(time.astype(np.double)).to(device)
     t = t.unsqueeze(1).unsqueeze(0)
 
     z1 = torch.linspace(-3,3,10)
@@ -117,12 +117,12 @@ def plot_gpmodel(time, gp_model, np_model, C_train, y_train, fname):
     fig.subplots_adjust(wspace=0.5, hspace=0.5)
     n_train = len(C_train)
     with torch.no_grad():
-        c = torch.tensor(C_train, dtype=torch.float32).to(device)
+        c = torch.tensor(C_train, dtype=torch.double).to(device)
         z_pred = gp_model(c).mean.cpu().numpy()
 
-        t = torch.from_numpy(time.astype(np.float32))
+        t = torch.from_numpy(time.astype(np.double))
         t = t.repeat(n_train, 1).to(device)
-        y =  torch.from_numpy(y_train.astype(np.float32)).to(device)
+        y =  torch.from_numpy(y_train.astype(np.double)).to(device)
         z_true_mu, z_true_sigma = np_model.xy_to_mu_sigma(t.unsqueeze(2),y.unsqueeze(2))
         z_true_mu = z_true_mu.cpu().numpy()
         z_true_sigma = z_true_sigma.cpu().numpy()
@@ -138,12 +138,12 @@ def plot_gpmodel(time, gp_model, np_model, C_train, y_train, fname):
         X,Y = np.meshgrid(np.linspace(min(C_train[:,0]),max(C_train[:,0]),10), 
         np.linspace(min(C_train[:,1]),max(C_train[:,1]),10))
         c_grid_np = np.vstack([X.ravel(), Y.ravel()]).T 
-        c_grid = torch.tensor(c_grid_np, dtype=torch.float32).to(device)
+        c_grid = torch.tensor(c_grid_np, dtype=torch.double).to(device)
         # plot covariance of randomly selected points
         idx = RNG.choice(range(n_train),size=z_dim, replace=False)  
         for i, id_ in enumerate(idx):
             ci = C_train[id_,:].reshape(1, 2)
-            ci = torch.tensor(ci, dtype=torch.float32).to(device)
+            ci = torch.tensor(ci, dtype=torch.double).to(device)
             Ki = gp_model.get_covaraince(ci, c_grid)
             axs[1,i].tricontourf(c_grid_np[:,0], c_grid_np[:,1], Ki, cmap='plasma')
             axs[1,i].scatter(C_train[id_,0], C_train[id_,1], marker='x', s=50, color='k')

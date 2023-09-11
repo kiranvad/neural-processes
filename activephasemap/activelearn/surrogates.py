@@ -177,7 +177,7 @@ class NPModelDataset(Dataset):
     def __init__(self, time, y):
         self.data = []
         for yi in y:
-            xi = torch.from_numpy(time.astype(torch.double))
+            xi = torch.from_numpy(time).to(device)
             xi = xi.view(xi.shape[0],1).to(device)
             yi = yi.view(yi.shape[0],1).to(device)
             self.data.append((xi,yi))
@@ -193,10 +193,10 @@ def update_npmodel(time, np_model, data, **kwargs):
     num_context = kwargs.get('num_context',  25)
     num_target = kwargs.get('num_target',  25)
     num_iterations = kwargs.get('num_iterations',  30)
-    print(data.y.shape)
+    # print('func:update_npmodel: input spectra shape :', data.y.shape)
     dataset = NPModelDataset(time, data.y)
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    np_optimizer = torch.optim.Adam(np_model.parameters(), lr=1e-3)
+    np_optimizer = torch.optim.Adam(np_model.parameters(), lr=kwargs.get('lr',  1e-3))
     np_trainer = NeuralProcessTrainer(device, 
     np_model, np_optimizer,
     num_context_range=(num_context, num_context),
@@ -207,7 +207,7 @@ def update_npmodel(time, np_model, data, **kwargs):
     np_model.training = True
     np_trainer.train(data_loader, num_iterations)
     loss = np_trainer.epoch_loss_history[-1]
-    print('NP model loss : %.2f'%loss)
+    print('func:update_npmodel: NP model loss : %.2f'%loss)
 
     # freeze model training
     np_model.training = False

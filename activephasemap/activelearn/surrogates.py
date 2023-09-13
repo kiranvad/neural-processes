@@ -196,17 +196,23 @@ def update_npmodel(time, np_model, data, **kwargs):
     # print('func:update_npmodel: input spectra shape :', data.y.shape)
     dataset = NPModelDataset(time, data.y)
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    np_optimizer = torch.optim.Adam(np_model.parameters(), lr=kwargs.get('lr',  1e-3))
-    np_trainer = NeuralProcessTrainer(device, 
-    np_model, np_optimizer,
+    for name, param in np_model.named_parameters():
+        if 'hidden_to' in name:
+            print(name)
+            param.requires_grad = False
+        elif 'r_to_hidden' in name:
+            print(name)
+            param.requires_grad = False   
+    optimizer = torch.optim.Adam(np_model.parameters(), lr=kwargs.get('lr',  1e-3))
+    trainer = NeuralProcessTrainer(device, np_model, optimizer,
     num_context_range=(num_context, num_context),
     num_extra_target_range=(num_target, num_target),
-    verbose = False
+    print_freq=1000
     )
 
     np_model.training = True
-    np_trainer.train(data_loader, num_iterations)
-    loss = np_trainer.epoch_loss_history[-1]
+    trainer.train(data_loader, num_iterations)
+    loss = trainer.epoch_loss_history[-1]
     print('func:update_npmodel: NP model loss : %.2f'%loss)
 
     # freeze model training

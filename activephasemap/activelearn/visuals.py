@@ -100,8 +100,8 @@ def plot_npmodel(time, z_dim, model, fname):
                 mu_ = mu.cpu().squeeze().numpy() 
                 sigma_ = sigma.cpu().squeeze().numpy()
                 axs[i,9-j].plot(time, mu_)
-                axs[i,9-j].fill_between(time, 
-                mu_-sigma_, mu_+sigma_,alpha=0.2, color='grey')
+                # axs[i,9-j].fill_between(time, 
+                # mu_-sigma_, mu_+sigma_,alpha=0.2, color='grey')
                 axs[i,9-j].set_title('(%.2f, %.2f)'%(z1[i], z2[j]))
                 axs[i, 9-j].axis('off')
         fig.supxlabel('z1', fontsize=20)

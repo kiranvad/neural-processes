@@ -213,13 +213,13 @@ class PhaseMappingExperiment:
             print('Iteration %d : '%k, comps[k].shape, spectra[k].shape)
         self.comps = np.vstack(comps)
         self.points = self.comps
-        self.spectra = np.vstack(spectra)
+        _spectra = np.vstack(spectra)
         self.wav = np.load(self.dir+'wav.npy')
+        self.spectra = np.vstack([self.normalize(_spectra[i,:]) for i in range(len(self.comps))])
         self.t = (self.wav - min(self.wav))/(max(self.wav) - min(self.wav))
         self.n_domain = len(self.t)
 
     def generate(self):
-        # self.F = [self.normalize(self.spectra[i,:]) for i in range(len(self.comps))]
         self.F = [self.spectra[i,:] for i in range(len(self.comps))]
 
         return 

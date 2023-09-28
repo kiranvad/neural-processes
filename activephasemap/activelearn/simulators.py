@@ -158,6 +158,7 @@ class GNPPhases:
         AG_x = self.minmax(comps[:,0]*0.00064/350*10**5)
         AA_x = self.minmax(comps[:,1]*0.00630/350*10**4)
         self.points = np.hstack((AG_x.reshape(-1,1), AA_x.reshape(-1,1)))
+        self.comps = self.points
         self.wl = self.spectra[0]['Wavelength'].values.astype('double')
         wl_ = np.linspace(min(self.wl), max(self.wl), num=100)
         self.t = (wl_-min(wl_))/(max(wl_)-min(wl_))

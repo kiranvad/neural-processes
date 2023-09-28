@@ -26,7 +26,10 @@ class UVVisDataset(Dataset):
         return len(self.files)
 
     def __getitem__(self, i):
-        npzfile = np.load(self.files[i])
+        try:
+            npzfile = np.load(self.files[i])
+        except Exception as e:
+            print('%s Could not load %s'%(type(e).__name__, self.files[i]))
         wl, I = npzfile['wl'], npzfile['I']
         wl = (wl-min(wl))/(max(wl)-min(wl))
         wl_ = torch.tensor(wl.astype(np.float32)).unsqueeze(1)

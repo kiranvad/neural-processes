@@ -154,22 +154,21 @@ class GNPPhases:
     def __init__(self, dir):
         comps = pd.read_csv(dir+'/grid.csv').to_numpy()
         files = glob.glob(dir+'/Grid_*.xlsx')
-        self.spectra = [pd.read_excel(file) for file in files]
-        AG_x = self.minmax(comps[:,0]*0.00064/350*10**5)
-        AA_x = self.minmax(comps[:,1]*0.00630/350*10**4)
+        self.spectra_files = [pd.read_excel(file) for file in files]
+        AG_x = comps[:,0]*0.00064/350*10**5
+        AA_x = comps[:,1]*0.00630/350*10**4
         self.points = np.hstack((AG_x.reshape(-1,1), AA_x.reshape(-1,1)))
-        self.comps = self.points
-        self.wl = self.spectra[0]['Wavelength'].values.astype('double')
+        self.wl = self.spectra_files[0]['Wavelength'].values.astype('double')
         wl_ = np.linspace(min(self.wl), max(self.wl), num=100)
         self.t = (wl_-min(wl_))/(max(wl_)-min(wl_))
         self.n_domain = len(self.t)
         
     def simulate(self, c):
-        rid = np.random.choice(len(self.spectra))
+        rid = np.random.choice(len(self.spectra_files))
         lookup_dist = cdist(c.reshape(1,-1), self.points)
         lookup_cid = np.argmin(lookup_dist)
-        y = self.spectra[rid].iloc[:,lookup_cid+1].values.astype('double')
-        wl = self.spectra[rid]['Wavelength'].values.astype('double')
+        y = self.spectra_files[rid].iloc[:,lookup_cid+1].values.astype('double')
+        wl = self.spectra_files[rid]['Wavelength'].values.astype('double')
         spline = interpolate.splrep(wl, y, s=0)
         wl_ = np.linspace(min(wl), max(wl), num=100)
         I_grid = interpolate.splev(wl_, spline, der=0)
@@ -178,7 +177,9 @@ class GNPPhases:
         return I_grid/norm 
     
     def generate(self):
-        self.F = [self.simulate(ci) for ci in self.points]
+        self.F = [self.simulate(ci) for ci in self.points] 
+        self.comps = self.points 
+        self.spectra = np.asarray(self.F)
 
         return
 
@@ -201,6 +202,34 @@ class GNPPhases:
             plt.close()
         else:
             plt.show()
+
+class PeptideGNPPhases:
+    def __init__(self, dir):
+        self.comps = pd.read_csv(dir+'/comps.csv').to_numpy()
+        self.spectra = pd.read_csv(dir+'/spectra.csv').to_numpy()
+        self.wl = np.load(dir+"wav.npy")
+        wl_ = np.linspace(min(self.wl), max(self.wl), num=100)
+        self.t = (wl_-min(wl_))/(max(wl_)-min(wl_))
+        self.n_domain = len(self.t) 
+
+        # for compatibility with other code
+        self.points = self.comps
+        
+    def simulate(self, c):
+        lookup_dist = cdist(c.reshape(1,-1), self.comps)
+        lookup_cid = np.argmin(lookup_dist)
+        y = self.spectra[lookup_cid,:].astype('double')
+        spline = interpolate.splrep(self.wl, y, s=0)
+        wl_ = np.linspace(min(self.wl), max(self.wl), num=100)
+        I_grid = interpolate.splev(wl_, spline, der=0)
+        norm = np.sqrt(np.trapz(I_grid**2, wl_))
+
+        return I_grid/norm 
+    
+    def generate(self):
+        self.F = [self.simulate(ci) for ci in self.points] 
+        
+        return
 
 
 class PhaseMappingExperiment:

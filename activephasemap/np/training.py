@@ -106,8 +106,6 @@ class NeuralProcessTrainer():
 
                 if all([self.verbose, self.steps % self.print_freq == 0]):
                     print("iteration {}, loss {:.3f}".format(self.steps, loss.item()))
-            if self.verbose:
-                print("Epoch: {}, Avg_loss: {}".format(epoch, epoch_loss / len(data_loader)))
 
             self.epoch_loss_history.append(epoch_loss / len(data_loader))
             if x_plot is not None:

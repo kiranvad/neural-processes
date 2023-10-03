@@ -198,10 +198,8 @@ def update_npmodel(time, np_model, data, **kwargs):
     data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     for name, param in np_model.named_parameters():
         if 'hidden_to' in name:
-            print(name)
             param.requires_grad = False
         elif 'r_to_hidden' in name:
-            print(name)
             param.requires_grad = False   
     optimizer = torch.optim.Adam(np_model.parameters(), lr=kwargs.get('lr',  1e-3))
     trainer = NeuralProcessTrainer(device, np_model, optimizer,
@@ -211,7 +209,7 @@ def update_npmodel(time, np_model, data, **kwargs):
     )
 
     np_model.training = True
-    trainer.train(data_loader, num_iterations)
+    trainer.train(data_loader, num_iterations, verbose = kwargs.get("verbose", False))
     loss = trainer.epoch_loss_history[-1]
     print('func:update_npmodel: NP model loss : %.2f'%loss)
 

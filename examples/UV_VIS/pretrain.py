@@ -22,7 +22,7 @@ print('Saving the results to %s'%SAVE_DIR)
 batch_size = 8
 num_context = 40
 num_target = 40
-num_iterations = 100
+num_iterations = 150
 x_dim = 1
 y_dim = 1
 r_dim = 50  # Dimension of representation of context points

@@ -84,8 +84,8 @@ class ActiveLearningDataset(Dataset):
         return xs, ys 
 
     def to_tensor(self, x, y):
-        x_ = torch.tensor(x, dtype=torch.double).to(device)
-        y_ = torch.tensor(y, dtype=torch.double).to(device)
+        x_ = torch.Tensor(x).to(device)
+        y_ = torch.Tensor(y).to(device)
 
         return x_, y_
     

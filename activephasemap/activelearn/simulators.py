@@ -213,8 +213,8 @@ class PeptideGNPPhases:
         self.n_domain = len(self.t) 
 
         # for compatibility with other code
-        self.points = self.comps
-        
+        self.points = self.comps 
+
     def simulate(self, c):
         lookup_dist = cdist(c.reshape(1,-1), self.comps)
         lookup_cid = np.argmin(lookup_dist)
